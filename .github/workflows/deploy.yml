@@ -1,0 +1,28 @@
+name: Deploy Site
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy-key.pem
+          chmod 600 ~/.ssh/deploy-key.pem
+          {
+            echo "Host my-vps"
+            echo "  HostName ${{ secrets.SSH_IP }}"
+            echo "  User ${{ secrets.SSH_USER }}"
+            echo "  IdentityFile ~/.ssh/deploy-key.pem"
+            echo "  StrictHostKeyChecking no"
+          } >> ~/.ssh/config
+
+      - name: Deploy site
+        run: |
+          ssh my-vps "bash -lc 'cd ${{ secrets.PROJECT_ROOT }} && ./redeploy-site.sh'"
